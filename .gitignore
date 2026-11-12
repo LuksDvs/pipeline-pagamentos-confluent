@@ -1,0 +1,10 @@
+# Segredos e estado local: nunca versionar
+.env
+.state
+connectors/*.rendered.json
+sql/opcional/*.rendered.sql
+
+# Python
+__pycache__/
+.venv/
+*.pyc

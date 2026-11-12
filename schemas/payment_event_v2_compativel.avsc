@@ -1,0 +1,18 @@
+{
+  "type": "record",
+  "name": "PaymentEvent",
+  "namespace": "com.bootcamp.payments",
+  "doc": "v2 COMPATÍVEL (BACKWARD): campo novo opcional, com default.",
+  "fields": [
+    {"name": "transaction_id", "type": "long"},
+    {"name": "card_id", "type": "int"},
+    {"name": "card_last4", "type": "string", "confluent:tags": ["PCI"]},
+    {"name": "customer_document", "type": "string", "confluent:tags": ["PII"]},
+    {"name": "merchant_id", "type": "int"},
+    {"name": "amount", "type": {"type": "bytes", "logicalType": "decimal", "precision": 15, "scale": 2}},
+    {"name": "currency", "type": "string"},
+    {"name": "channel", "type": {"type": "enum", "name": "Channel", "symbols": ["pos", "ecommerce", "app"]}},
+    {"name": "event_time", "type": {"type": "long", "logicalType": "timestamp-millis"}},
+    {"name": "installments", "type": "int", "default": 1, "doc": "Número de parcelas; eventos antigos assumem 1."}
+  ]
+}
