@@ -125,9 +125,33 @@ camada_fundacao() {
   } | tee "$EVID_DIR/camada1-identidades-acls.txt"
 }
 
+# O schema marca campos com as tags PII e PCI; elas precisam existir no
+# Stream Catalog antes do registro. Uma chave temporária do próprio usuário
+# cria as tags pela API do catálogo e é apagada em seguida.
+criar_tags_catalogo() {
+  log "Tags PII e PCI no Stream Catalog"
+  local key_json key secret code=""
+  key_json="$(confluent api-key create --resource "$SR_ID" \
+    --description "temporaria: tags do desafio" -o json)"
+  key="$(jq -r .api_key <<<"$key_json")"
+  secret="$(jq -r .api_secret <<<"$key_json")"
+  for _ in $(seq 1 12); do
+    code="$(curl -s -o /dev/null -w '%{http_code}' -u "$key:$secret" \
+      -H 'Content-Type: application/json' -X POST "$SR_URL/catalog/v1/types/tagdefs" \
+      -d '[{"name":"PII","description":"Dado pessoal (LGPD)"},{"name":"PCI","description":"Dado de cartao (PCI DSS)"}]')"
+    [[ "$code" =~ ^(200|409)$ ]] && break
+    echo "    aguardando a chave temporária ficar ativa (HTTP $code)..."; sleep 10
+  done
+  confluent api-key delete "$key" --force >/dev/null 2>&1 || true
+  [[ "$code" =~ ^(200|409)$ ]] \
+    || die "não consegui criar as tags (HTTP $code): crie PII e PCI em Catalog management > Tags e rode de novo"
+  ok "tags PII e PCI disponíveis"
+}
+
 camada_contrato() {
   log "Camada 2 - Contrato de dados"
-  need_state ENV_ID
+  need_state ENV_ID SR_ID SR_URL
+  criar_tags_catalogo
   confluent schema-registry schema create --subject "$CONTRACT_SUBJECT" \
     --schema "$ROOT_DIR/schemas/payment_event_v1.avsc" --type avro --environment "$ENV_ID"
   confluent schema-registry subject update "$CONTRACT_SUBJECT" --compatibility backward \
