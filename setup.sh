@@ -159,12 +159,12 @@ camada_contrato() {
 
   {
     echo "## Teste 1: campo novo COM default (esperado: compatível)"
-    confluent schema-registry schema compatibility validate --subject "$CONTRACT_SUBJECT" \
-      --version latest --schema "$ROOT_DIR/schemas/payment_event_v2_compativel.avsc" \
+    confluent schema-registry schema compatibility validate "$ROOT_DIR/schemas/payment_event_v2_compativel.avsc" \
+      --subject "$CONTRACT_SUBJECT" --version latest \
       --type avro --environment "$ENV_ID"
     echo; echo "## Teste 2: campo obrigatório novo SEM default (esperado: incompatível)"
-    confluent schema-registry schema compatibility validate --subject "$CONTRACT_SUBJECT" \
-      --version latest --schema "$ROOT_DIR/schemas/payment_event_v2_incompativel.avsc" \
+    confluent schema-registry schema compatibility validate "$ROOT_DIR/schemas/payment_event_v2_incompativel.avsc" \
+      --subject "$CONTRACT_SUBJECT" --version latest \
       --type avro --environment "$ENV_ID" || true
     echo; echo "## Nível de compatibilidade do subject"
     confluent schema-registry subject describe "$CONTRACT_SUBJECT" --environment "$ENV_ID"
