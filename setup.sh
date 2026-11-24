@@ -97,18 +97,12 @@ camada_fundacao() {
   ok "Schema Registry $SR_ID"
 
   log "RBAC do Flink, do consumer (schemas) e do observer (métricas)"
-  local role
-  for role in DeveloperRead DeveloperWrite DeveloperManage; do
-    rb --principal "User:$SA_FLINK_ID" --role "$role" \
-      --environment "$ENV_ID" --cloud-cluster "$CLUSTER_ID" --kafka-cluster "$CLUSTER_ID" \
-      --resource Topic:desafio --prefix
-    rb --principal "User:$SA_FLINK_ID" --role "$role" \
-      --environment "$ENV_ID" --schema-registry-cluster "$SR_ID" \
-      --resource Subject:desafio --prefix
-  done
-  rb --principal "User:$SA_FLINK_ID" --role DeveloperWrite \
-    --environment "$ENV_ID" --cloud-cluster "$CLUSTER_ID" --kafka-cluster "$CLUSTER_ID" \
-    --resource Transactional-Id:_confluent-flink_ --prefix
+  # Flink: o Flink não usa ACLs, só RBAC, e o cluster Basic não aceita papéis
+  # por recurso (DeveloperRead/Write num tópico). Por isso a identidade do Flink
+  # recebe EnvironmentAdmin, restrito ao environment do desafio. Num cluster
+  # Standard ou superior, o mínimo privilégio seria DeveloperRead/Write nos
+  # tópicos e subjects desafio* e no Transactional-Id _confluent-flink_.
+  rb --principal "User:$SA_FLINK_ID" --role EnvironmentAdmin --environment "$ENV_ID"
   rb --principal "User:$SA_CONSUMER_ID" --role DeveloperRead \
     --environment "$ENV_ID" --schema-registry-cluster "$SR_ID" \
     --resource Subject:desafio --prefix

@@ -84,10 +84,12 @@ Cada camada pode ser rodada sozinha e conferida antes da próxima. Os IDs e as c
 |---|---|---|
 | `desafio-producer` | Identidade do conector de CDC | ACL: `CREATE`, `WRITE`, `DESCRIBE` em tópicos `desafio*` e `__debezium-heartbeat*`; `IDEMPOTENT_WRITE` no cluster |
 | `desafio-consumer` | Quem lê os alertas | ACL: `READ`, `DESCRIBE` em tópicos `desafio*`; `READ` em grupos `desafio*`; leitura de schemas `desafio*` |
-| `desafio-flink` | Principal dos statements do Flink | RBAC: `DeveloperRead`, `DeveloperWrite` e `DeveloperManage` em tópicos e subjects `desafio*` |
+| `desafio-flink` | Principal dos statements do Flink | RBAC: `EnvironmentAdmin` só no environment `desafio-final` (ver nota abaixo) |
 | `desafio-observer` | Leitura de métricas | RBAC: `MetricsViewer` no environment |
 
 A conta pessoal só é usada no setup e no teardown. Nenhuma aplicação usa credencial pessoal.
+
+> **Nota sobre o Flink no cluster Basic:** o Flink não usa ACLs, só RBAC, e o cluster Basic não aceita papéis por recurso (como `DeveloperRead` num tópico). Por isso a identidade do Flink recebe `EnvironmentAdmin`, limitado ao environment do desafio. Num cluster Standard, o mínimo privilégio seria `DeveloperRead`/`DeveloperWrite` nos tópicos e subjects `desafio*` e no Transactional-Id `_confluent-flink_`.
 
 **Evidência** (`evidencias/camada1-identidades-acls.txt`):
 
@@ -204,7 +206,7 @@ Escolhas importantes:
 |---|---|---|---|
 | `desafio-producer` | Criar e escrever em `desafio*` | Ler qualquer tópico | O conector só publica; se a chave vazar, ninguém lê dados com ela |
 | `desafio-consumer` | Ler `desafio*` e usar grupos `desafio*` | Escrever | Quem consome alertas não deve conseguir forjá-los |
-| `desafio-flink` | Ler, escrever e criar tópicos e subjects `desafio*` | Nada fora do prefixo | O Flink cria as tabelas derivadas, mas fica restrito ao projeto |
+| `desafio-flink` | Administrar o environment `desafio-final` | Nada fora desse environment | No cluster Basic o Flink só aceita papéis amplos; o isolamento fica no environment do desafio |
 | `desafio-observer` | Ler métricas | Ler dados | Monitorar não exige acesso ao conteúdo |
 | `cdc_user` (Postgres) | Replicar e ler 5 tabelas | Escrever no banco | Privilégio mínimo na origem |
 
