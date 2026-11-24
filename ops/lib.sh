@@ -30,6 +30,10 @@ load_env() {
 # Grava/atualiza CHAVE=valor no .state (arquivo local, fora do Git)
 save_state() {
   local key="$1" value="$2"
+  # Um comando de criação que falhou devolve vazio ou "null": para aqui,
+  # em vez de seguir com um ID inválido.
+  [[ -n "$value" && "$value" != "null" ]] \
+    || die "não consegui obter $key: veja a mensagem de erro logo acima"
   touch "$STATE_FILE"
   chmod 600 "$STATE_FILE"
   grep -v "^${key}=" "$STATE_FILE" > "$STATE_FILE.tmp" || true
