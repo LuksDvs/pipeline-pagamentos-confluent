@@ -1,0 +1,6 @@
+{}	{"amount":null,"card_id":138,"detected_at":"2026-11-25T00:34:50.284Z","event_time":"2026-11-01T10:00:00Z","merchant_id":27,"reason":"amount_nulo","transaction_id":119}
+{}	{"amount":"-15","card_id":94,"detected_at":"2026-11-25T00:34:51.216Z","event_time":"2026-11-02T06:00:00Z","merchant_id":9,"reason":"amount_nao_positivo","transaction_id":343}
+{}	{"amount":"328/5","card_id":234,"detected_at":"2026-11-25T00:34:51.686Z","event_time":"2026-11-03T02:00:00Z","merchant_id":null,"reason":"merchant_ausente","transaction_id":603}
+{}	{"amount":"0","card_id":252,"detected_at":"2026-11-25T00:34:51.983Z","event_time":"2026-11-03T22:00:00Z","merchant_id":13,"reason":"amount_nao_positivo","transaction_id":823}
+{}	{"amount":null,"card_id":26,"detected_at":"2026-11-25T00:34:52.187Z","event_time":"2026-11-04T18:00:00Z","merchant_id":null,"reason":"amount_nulo","transaction_id":1089}
+{}	{"amount":"-10","card_id":33,"detected_at":"2026-11-25T00:49:23.156Z","event_time":"2026-11-25T00:49:22.369Z","merchant_id":9,"reason":"amount_nao_positivo","transaction_id":2006}

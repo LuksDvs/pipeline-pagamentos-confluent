@@ -1,0 +1,11 @@
+Tabela        | Linhas
+--------------|-------
+customers     | 200
+accounts      | 240
+cards         | 320
+merchants     | 60
+transactions  | 2000
+
+Transações válidas: 1995 | em quarentena: 5
+Alertas esperados no Flink: RULE_VELOCITY=8 | RULE_DUPLICATE=5
+Carga concluída.

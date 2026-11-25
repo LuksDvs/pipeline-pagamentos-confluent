@@ -1,0 +1,13 @@
+## received_bytes por tópico (pico por minuto, última 1 h)
+__debezium-heartbeat-lcc-xq0oxx1.desafio: pico 92.0 bytes/min
+desafio.fraud.detected: pico 1981.0 bytes/min
+desafio.payments.enriched: pico 177868.0 bytes/min
+desafio.payments.quarantine: pico 571.0 bytes/min
+desafio.payments.transactions: pico 120580.0 bytes/min
+desafio.public.accounts: pico 38994.0 bytes/min
+desafio.public.cards: pico 48593.0 bytes/min
+desafio.public.customers: pico 39787.0 bytes/min
+desafio.public.merchants: pico 10958.0 bytes/min
+desafio.public.transactions: pico 338477.0 bytes/min
+
+## consumer lag por grupo (offsets, última 1 h)

@@ -1,0 +1,22 @@
+## confluent iam service-account list
+  Current |     ID     |       Name       |          Description            
+          | sa-0jm2wyp | desafio-consumer | Desafio pipeline de             
+          | sa-8mopkd0 | desafio-flink    | Desafio pipeline de             
+          | sa-kgz10wp | desafio-observer | Desafio pipeline de             
+          | sa-pk3p06o | desafio-producer | Desafio pipeline de             
+
+## confluent kafka acl list
+     Principal    | Permission |    Operation     | Resource Type |    Resource Name     | Pattern Type  
+------------------+------------+------------------+---------------+----------------------+---------------
+  User:sa-0jm2wyp | ALLOW      | DESCRIBE         | TOPIC         | desafio              | PREFIXED      
+  User:sa-0jm2wyp | ALLOW      | READ             | GROUP         | desafio              | PREFIXED      
+  User:sa-0jm2wyp | ALLOW      | READ             | TOPIC         | desafio              | PREFIXED      
+  User:sa-pk3p06o | ALLOW      | CREATE           | TOPIC         | __debezium-heartbeat | PREFIXED      
+  User:sa-pk3p06o | ALLOW      | CREATE           | TOPIC         | desafio              | PREFIXED      
+  User:sa-pk3p06o | ALLOW      | DESCRIBE         | CLUSTER       | kafka-cluster        | LITERAL       
+  User:sa-pk3p06o | ALLOW      | DESCRIBE         | TOPIC         | __debezium-heartbeat | PREFIXED      
+  User:sa-pk3p06o | ALLOW      | DESCRIBE         | TOPIC         | desafio              | PREFIXED      
+  User:sa-pk3p06o | ALLOW      | DESCRIBE_CONFIGS | TOPIC         | desafio              | PREFIXED      
+  User:sa-pk3p06o | ALLOW      | IDEMPOTENT_WRITE | CLUSTER       | kafka-cluster        | LITERAL       
+  User:sa-pk3p06o | ALLOW      | WRITE            | TOPIC         | __debezium-heartbeat | PREFIXED      
+  User:sa-pk3p06o | ALLOW      | WRITE            | TOPIC         | desafio              | PREFIXED      

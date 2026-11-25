@@ -1,0 +1,40 @@
+## Service accounts
+  Current |     ID     |       Name       |          Description            
+          | sa-0jm2wyp | desafio-consumer | Desafio pipeline de             
+          | sa-8mopkd0 | desafio-flink    | Desafio pipeline de             
+          | sa-kgz10wp | desafio-observer | Desafio pipeline de             
+          | sa-pk3p06o | desafio-producer | Desafio pipeline de             
+
+## ACLs do cluster
+     Principal    | Permission |    Operation     | Resource Type |    Resource Name     | Pattern Type  
+------------------+------------+------------------+---------------+----------------------+---------------
+  User:sa-0jm2wyp | ALLOW      | DESCRIBE         | TOPIC         | desafio              | PREFIXED      
+  User:sa-0jm2wyp | ALLOW      | READ             | GROUP         | desafio              | PREFIXED      
+  User:sa-0jm2wyp | ALLOW      | READ             | TOPIC         | desafio              | PREFIXED      
+  User:sa-pk3p06o | ALLOW      | CREATE           | TOPIC         | __debezium-heartbeat | PREFIXED      
+  User:sa-pk3p06o | ALLOW      | CREATE           | TOPIC         | desafio              | PREFIXED      
+  User:sa-pk3p06o | ALLOW      | DESCRIBE         | CLUSTER       | kafka-cluster        | LITERAL       
+  User:sa-pk3p06o | ALLOW      | DESCRIBE         | TOPIC         | __debezium-heartbeat | PREFIXED      
+  User:sa-pk3p06o | ALLOW      | DESCRIBE         | TOPIC         | desafio              | PREFIXED      
+  User:sa-pk3p06o | ALLOW      | DESCRIBE_CONFIGS | TOPIC         | desafio              | PREFIXED      
+  User:sa-pk3p06o | ALLOW      | IDEMPOTENT_WRITE | CLUSTER       | kafka-cluster        | LITERAL       
+  User:sa-pk3p06o | ALLOW      | WRITE            | TOPIC         | __debezium-heartbeat | PREFIXED      
+  User:sa-pk3p06o | ALLOW      | WRITE            | TOPIC         | desafio              | PREFIXED      
+
+## Role bindings de sa-8mopkd0
+     ID     |    Principal    | Email |       Role       | Environment | Cloud Cluster |  Cluster Type   | Logical Cluster | Resource Type |  Name   | Pattern Type  
+------------+-----------------+-------+------------------+-------------+---------------+-----------------+-----------------+---------------+---------+---------------
+  rb-g4eGBY | User:sa-8mopkd0 |       | EnvironmentAdmin | env-776ok1  |               |                 |                 |               |         |               
+  rb-mQeZN2 | User:sa-8mopkd0 |       | DeveloperWrite   | env-776ok1  |               | Schema Registry | lsrc-81656nr    | Subject       | desafio | PREFIXED      
+  rb-o7eZKv | User:sa-8mopkd0 |       | DeveloperRead    | env-776ok1  |               | Schema Registry | lsrc-81656nr    | Subject       | desafio | PREFIXED      
+  rb-wozvRw | User:sa-8mopkd0 |       | DeveloperManage  | env-776ok1  |               | Schema Registry | lsrc-81656nr    | Subject       | desafio | PREFIXED      
+
+## Role bindings de sa-0jm2wyp
+     ID     |    Principal    | Email |     Role      | Environment | Cloud Cluster |  Cluster Type   | Logical Cluster | Resource Type |  Name   | Pattern Type  
+------------+-----------------+-------+---------------+-------------+---------------+-----------------+-----------------+---------------+---------+---------------
+  rb-qyeZdA | User:sa-0jm2wyp |       | DeveloperRead | env-776ok1  |               | Schema Registry | lsrc-81656nr    | Subject       | desafio | PREFIXED      
+
+## Role bindings de sa-kgz10wp
+     ID     |    Principal    | Email |     Role      | Environment | Cloud Cluster | Cluster Type | Logical Cluster | Resource Type | Name | Pattern Type  
+------------+-----------------+-------+---------------+-------------+---------------+--------------+-----------------+---------------+------+---------------
+  rb-N3Nlrd | User:sa-kgz10wp |       | MetricsViewer | env-776ok1  |               |              |                 |               |      |               

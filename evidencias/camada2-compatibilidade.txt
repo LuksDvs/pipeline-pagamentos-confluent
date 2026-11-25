@@ -1,0 +1,14 @@
+## Teste 1: campo novo COM default (esperado: compatível)
++------------+------+
+| Compatible | true |
++------------+------+
+
+## Teste 2: campo obrigatório novo SEM default (esperado: incompatível)
++------------+-------+
+| Compatible | false |
++------------+-------+
+
+## Nível de compatibilidade do subject
+  Version  
+-----------
+        1  
