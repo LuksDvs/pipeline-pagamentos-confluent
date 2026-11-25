@@ -4,7 +4,6 @@ CREATE TABLE `desafio.fraud.detected` (
   rule_name    STRING,
   card_id      INT,
   account_id   INT,
-  risk_tier    STRING,
   tx_count     BIGINT,
   total_amount DECIMAL(15, 2),
   first_tx_id  BIGINT,

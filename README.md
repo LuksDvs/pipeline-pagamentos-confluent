@@ -14,8 +14,8 @@ flowchart LR
   T2 --> F2[Flink: temporal join<br/>com accounts]
   T1 -. accounts .-> F2
   F2 --> T3[desafio.payments.enriched]
-  T3 --> R1[RULE_VELOCITY<br/>3 tx / 60 s]
-  T3 --> R2[RULE_DUPLICATE<br/>mesmo valor / 5 min]
+  T2 --> R1[RULE_VELOCITY<br/>3 tx / 60 s]
+  T2 --> R2[RULE_DUPLICATE<br/>mesmo valor / 5 min]
   R1 --> A[desafio.fraud.detected]
   R2 --> A
   A --> C[Consumidor<br/>desafio-consumer]
@@ -168,7 +168,7 @@ Entre as 2000 transações, o seed planta de propósito **8 rajadas de velocidad
 | `02`, `03` | Chave primária e watermark (`updated_at`) em `accounts`: vira uma **tabela versionada** |
 | `04`, `05`, `06` | Um statement set separa transações **válidas** de **com defeito** (quarentena) |
 | `07`, `08` | **Temporal join:** cada transação recebe a versão da conta vigente **no momento da transação** |
-| `09`, `10` | **RULE_VELOCITY** com `MATCH_RECOGNIZE`: 3 transações no mesmo cartão em até 60 s |
+| `09`, `10` | **RULE_VELOCITY** com `MATCH_RECOGNIZE`: 3 transações no mesmo cartão em até 60 s, lidas das transações limpas |
 | `11` | **RULE_DUPLICATE** com `MATCH_RECOGNIZE`: mesmo cartão, mesmo estabelecimento e mesmo valor em até 5 min |
 
 Escolhas importantes:
@@ -176,6 +176,7 @@ Escolhas importantes:
 - **Tempo de evento** (`created_at`) e não tempo de processamento: o snapshot inicial chega todo de uma vez, e só o tempo de evento mantém a regra de 60 s correta.
 - **Watermark de 5 s** e `sql.tables.scan.idle-timeout=5s`: a tabela de contas quase não recebe eventos, e sem o idle timeout o watermark do join ficaria preso.
 - **Tópicos com 1 partição** (CDC e tabelas do Flink): sem partições ociosas segurando o watermark. Para o volume do desafio, uma partição sobra.
+- **As regras leem as transações limpas, não as enriquecidas.** O temporal join emite os eventos quando o watermark da tabela de contas avança, e não na ordem do tempo. Num primeiro teste, o `MATCH_RECOGNIZE` sobre a saída do join descartou 3 dos 13 alertas do seed como atrasados. Lendo o tópico limpo, que chega na ordem do CDC, todos aparecem.
 - **`alert_id` determinístico** (`VEL-<cartão>-<1ª transação>`): o consumidor consegue deduplicar o alerta se ele chegar duas vezes.
 
 **Gabarito:** com o seed, o Flink deve gerar **8 alertas RULE_VELOCITY e 5 RULE_DUPLICATE**, com 5 eventos na quarentena. Depois de `scripts/simular_fraude.py`, os números passam para **9, 6 e 6**.

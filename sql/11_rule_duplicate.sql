@@ -6,9 +6,9 @@ INSERT INTO `desafio.fraud.detected`
 SELECT
   CONCAT('DUP-', CAST(card_id AS STRING), '-', CAST(first_tx_id AS STRING)) AS alert_id,
   'RULE_DUPLICATE' AS rule_name,
-  card_id, account_id, risk_tier, CAST(2 AS BIGINT) AS tx_count, total_amount,
+  card_id, account_id, CAST(2 AS BIGINT) AS tx_count, total_amount,
   first_tx_id, last_tx_id, window_start, window_end
-FROM `desafio.payments.enriched`
+FROM `desafio.payments.transactions`
 MATCH_RECOGNIZE (
   PARTITION BY card_id
   ORDER BY event_time
@@ -16,7 +16,6 @@ MATCH_RECOGNIZE (
     A.transaction_id                            AS first_tx_id,
     B.transaction_id                            AS last_tx_id,
     B.account_id                                AS account_id,
-    B.risk_tier                                 AS risk_tier,
     CAST(A.amount + B.amount AS DECIMAL(15, 2)) AS total_amount,
     A.event_time                                AS window_start,
     B.event_time                                AS window_end
