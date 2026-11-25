@@ -211,6 +211,7 @@ camada_ingestao() {
 camada_processamento() {
   log "Camada 4 - Processamento (Flink SQL)"
   need_state ENV_ID CLUSTER_ID SA_FLINK_ID
+  flink_region
   if [[ -z "${FLINK_POOL_ID:-}" ]]; then
     save_state FLINK_POOL_ID "$(confluent flink compute-pool create "$CC_FLINK_POOL_NAME" \
       --cloud "$CC_CLOUD" --region "$CC_REGION" --max-cfu "$CC_FLINK_MAX_CFU" \
@@ -232,6 +233,7 @@ camada_processamento() {
 
 camada_opcionais() {
   need_state ENV_ID CLUSTER_ID
+  flink_region
   if [[ "${ENABLE_TABLEFLOW:-false}" == "true" ]]; then
     log "Opcional - Tableflow (Iceberg, storage gerenciado)"
     local topic

@@ -12,6 +12,7 @@ if [[ -n "${ENV_ID:-}" ]]; then
   confluent environment use "$ENV_ID" >/dev/null
 
   log "Parando e apagando os statements do Flink"
+  flink_region || true
   confluent flink statement list --environment "$ENV_ID" -o json 2>/dev/null \
     | jq -r '.[] | select(.name | startswith("desafio-")) | .name' \
     | while read -r name; do

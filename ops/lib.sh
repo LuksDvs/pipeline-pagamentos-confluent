@@ -67,10 +67,18 @@ run_flink() {
   local file="$1" name
   name="desafio-$(basename "$file" .sql | sed 's/\.rendered$//' | tr '_' '-')"
   log "Flink: $name"
-  if confluent flink statement describe "$name" --environment "$ENV_ID" >/dev/null 2>&1; then
-    warn "statement $name já existe; pulando"
-    return 0
-  fi
+  local status
+  status="$(confluent flink statement describe "$name" --environment "$ENV_ID" -o json 2>/dev/null \
+    | jq -r '.status // empty' || true)"
+  case "$status" in
+    COMPLETED|RUNNING|PENDING)
+      warn "statement $name já está $status; pulando"
+      return 0 ;;
+    "") ;;
+    *)
+      warn "statement $name estava $status; apagando para criar de novo"
+      confluent flink statement delete "$name" --environment "$ENV_ID" --force >/dev/null ;;
+  esac
   confluent flink statement create "$name" \
     --sql "$(cat "$file")" \
     --compute-pool "$FLINK_POOL_ID" \
@@ -81,6 +89,11 @@ run_flink() {
     --property "sql.tables.scan.idle-timeout=5s" \
     --wait \
     || warn "statement $name falhou: veja 'confluent flink statement describe $name'"
+}
+
+# Os comandos de statement do Flink precisam saber a nuvem e a região
+flink_region() {
+  confluent flink region use --cloud "$CC_CLOUD" --region "$CC_REGION" >/dev/null
 }
 
 # role binding idempotente: se já existir, só avisa

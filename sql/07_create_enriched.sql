@@ -14,5 +14,5 @@ CREATE TABLE `desafio.payments.enriched` (
   event_time     TIMESTAMP_LTZ(3) NOT NULL,
   WATERMARK FOR event_time AS event_time - INTERVAL '5' SECOND
 )
-DISTRIBUTED BY HASH(card_id) INTO 1 BUCKETS
+DISTRIBUTED INTO 1 BUCKETS
 WITH ('changelog.mode' = 'append');
