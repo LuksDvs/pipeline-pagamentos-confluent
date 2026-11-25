@@ -38,6 +38,7 @@ flowchart LR
 - [Custo total](#custo-total)
 - [Como derrubar tudo](#como-derrubar-tudo)
 - [Por que cada peça](#por-que-cada-peça)
+- [Lições do primeiro teste](#lições-do-primeiro-teste)
 - [Problemas comuns](#problemas-comuns)
 
 ## Pré-requisitos
@@ -91,10 +92,33 @@ A conta pessoal só é usada no setup e no teardown. Nenhuma aplicação usa cre
 
 > **Nota sobre o Flink no cluster Basic:** o Flink não usa ACLs, só RBAC, e o cluster Basic não aceita papéis por recurso (como `DeveloperRead` num tópico). Por isso a identidade do Flink recebe `EnvironmentAdmin`, limitado ao environment do desafio. Num cluster Standard, o mínimo privilégio seria `DeveloperRead`/`DeveloperWrite` nos tópicos e subjects `desafio*` e no Transactional-Id `_confluent-flink_`.
 
+![Environment desafio-final com o cluster Basic e o compute pool](evidencias/print-ambiente.png)
+
 **Evidência** (`evidencias/camada1-identidades-acls.txt`):
 
 ```text
-<sua evidência aqui: saída de "confluent iam service-account list" e "confluent kafka acl list">
+## confluent iam service-account list
+  Current |     ID     |       Name       |          Description            
+          | sa-0jm2wyp | desafio-consumer | Desafio pipeline de             
+          | sa-8mopkd0 | desafio-flink    | Desafio pipeline de             
+          | sa-kgz10wp | desafio-observer | Desafio pipeline de             
+          | sa-pk3p06o | desafio-producer | Desafio pipeline de             
+
+## confluent kafka acl list
+     Principal    | Permission |    Operation     | Resource Type |    Resource Name     | Pattern Type  
+------------------+------------+------------------+---------------+----------------------+---------------
+  User:sa-0jm2wyp | ALLOW      | DESCRIBE         | TOPIC         | desafio              | PREFIXED      
+  User:sa-0jm2wyp | ALLOW      | READ             | GROUP         | desafio              | PREFIXED      
+  User:sa-0jm2wyp | ALLOW      | READ             | TOPIC         | desafio              | PREFIXED      
+  User:sa-pk3p06o | ALLOW      | CREATE           | TOPIC         | __debezium-heartbeat | PREFIXED      
+  User:sa-pk3p06o | ALLOW      | CREATE           | TOPIC         | desafio              | PREFIXED      
+  User:sa-pk3p06o | ALLOW      | DESCRIBE         | CLUSTER       | kafka-cluster        | LITERAL       
+  User:sa-pk3p06o | ALLOW      | DESCRIBE         | TOPIC         | __debezium-heartbeat | PREFIXED      
+  User:sa-pk3p06o | ALLOW      | DESCRIBE         | TOPIC         | desafio              | PREFIXED      
+  User:sa-pk3p06o | ALLOW      | DESCRIBE_CONFIGS | TOPIC         | desafio              | PREFIXED      
+  User:sa-pk3p06o | ALLOW      | IDEMPOTENT_WRITE | CLUSTER       | kafka-cluster        | LITERAL       
+  User:sa-pk3p06o | ALLOW      | WRITE            | TOPIC         | __debezium-heartbeat | PREFIXED      
+  User:sa-pk3p06o | ALLOW      | WRITE            | TOPIC         | desafio              | PREFIXED
 ```
 
 ## Camada 2: Contrato de dados
@@ -117,7 +141,15 @@ Dois testes de evolução, com resultados opostos:
 **Evidência** (`evidencias/camada2-compatibilidade.txt`):
 
 ```text
-<sua evidência aqui: os dois "schema compatibility validate", um true e um false>
+## Teste 1: campo novo COM default (esperado: compatível)
++------------+------+
+| Compatible | true |
++------------+------+
+
+## Teste 2: campo obrigatório novo SEM default (esperado: incompatível)
++------------+-------+
+| Compatible | false |
++------------+-------+
 ```
 
 ## Camada 3: Ingestão (CDC)
@@ -152,10 +184,68 @@ Entre as 2000 transações, o seed planta de propósito **8 rajadas de velocidad
 | UPDATE | `u` | linha antiga (graças ao `REPLICA IDENTITY FULL`) | linha nova |
 | DELETE | `d` | linha apagada | nulo, seguido de um **tombstone** (valor nulo) |
 
-**Evidência** (`evidencias/01-envelopes-cdc.json`, gerado por `./ops/ver_envelopes.sh`):
+![Conector CDC em execução, 2.891 mensagens processadas](evidencias/print-conector.png)
+
+**Evidência** (`evidencias/01-envelopes-cdc.json`, gerado por `./ops/ver_envelopes.sh`; resumo dos 4 eventos, sem o bloco `source`):
 
 ```json
-<sua evidência aqui: os envelopes op=c, op=u, op=d e o tombstone da Padaria Demonstração CDC>
+// chave {"merchant_id":61}
+{
+  "op": "c",
+  "before": null,
+  "after": {
+    "bpo_segment": "alimentacao",
+    "city": "Belo Horizonte",
+    "created_at": "2026-11-25T00:16:22.705Z",
+    "legal_name": "Padaria Demonstração CDC Ltda",
+    "mcc": "5814",
+    "merchant_id": 61
+  },
+  "lsn": 29503176,
+  "ts_ms": 1795565782885
+}
+
+// chave {"merchant_id":61}
+{
+  "op": "u",
+  "before": {
+    "bpo_segment": "alimentacao",
+    "city": "Belo Horizonte",
+    "created_at": "2026-11-25T00:16:22.705Z",
+    "legal_name": "Padaria Demonstração CDC Ltda",
+    "mcc": "5814",
+    "merchant_id": 61
+  },
+  "after": {
+    "bpo_segment": "alimentacao",
+    "city": "Contagem",
+    "created_at": "2026-11-25T00:16:22.705Z",
+    "legal_name": "Padaria Demonstração CDC Ltda",
+    "mcc": "5814",
+    "merchant_id": 61
+  },
+  "lsn": 29503432,
+  "ts_ms": 1795565782886
+}
+
+// chave {"merchant_id":61}
+{
+  "op": "d",
+  "before": {
+    "bpo_segment": "alimentacao",
+    "city": "Contagem",
+    "created_at": "2026-11-25T00:16:22.705Z",
+    "legal_name": "Padaria Demonstração CDC Ltda",
+    "mcc": "5814",
+    "merchant_id": 61
+  },
+  "after": null,
+  "lsn": 29503720,
+  "ts_ms": 1795565783392
+}
+
+// chave {"merchant_id":61} -> valor vazio (tombstone do delete)
+null
 ```
 
 ## Camada 4: Processamento (Flink SQL)
@@ -181,14 +271,34 @@ Escolhas importantes:
 
 **Gabarito:** com o seed, o Flink deve gerar **8 alertas RULE_VELOCITY e 5 RULE_DUPLICATE**, com 5 eventos na quarentena. Depois de `scripts/simular_fraude.py`, os números passam para **9, 6 e 6**.
 
+**Resultado:** **9** alertas `RULE_VELOCITY`, **6** `RULE_DUPLICATE` e **6** eventos na quarentena: exatamente o gabarito do seed (8, 5 e 5) mais os casos simulados ao vivo (`VEL-11-2001`, `DUP-22-2004` e a transação 2006 com valor negativo).
+
+![Alertas no tópico desafio.fraud.detected](evidencias/print-alertas.png)
+
+![Compute pool do Flink com 4 statements contínuos](evidencias/print-flink.png)
+
 **Evidência** (`evidencias/02-alertas-fraude.json` e `evidencias/03-quarentena.json`, gerados por `./ops/consumir_alertas.sh`):
 
 ```json
-<sua evidência aqui: o alerta RULE_VELOCITY do card_id 11 publicado em desafio.fraud.detected>
+{
+  "account_id": 11,
+  "alert_id": "VEL-11-2001",
+  "card_id": 11,
+  "first_tx_id": 2001,
+  "last_tx_id": 2003,
+  "rule_name": "RULE_VELOCITY",
+  "total_amount": "1078.89  (o CLI mostra o decimal Avro como fração: 107889/100)",
+  "tx_count": 3,
+  "window_end": "2026-11-25T00:48:41.71Z",
+  "window_start": "2026-11-25T00:48:21.323Z"
+}
 ```
 
 ```text
-<sua evidência aqui: as três transações do card_id 11 com menos de 60 s entre a primeira e a última>
+[velocidade] transaction_id=2001 card_id=11 amount=49.90  at=2026-11-25 00:48:21.323
+[velocidade] transaction_id=2002 card_id=11 amount=129.00 at=2026-11-25 00:48:31.548
+[velocidade] transaction_id=2003 card_id=11 amount=899.99 at=2026-11-25 00:48:41.710
+-> 20,4 s entre a primeira e a terceira: dentro da janela de 60 s
 ```
 
 ## Camada 5: Operação
@@ -198,8 +308,22 @@ Escolhas importantes:
 `./ops/metricas.sh` consulta a Metrics API com a identidade `desafio-observer`: pico de `received_bytes` por tópico e lag máximo por consumer group.
 
 ```text
-<sua evidência aqui: saída de ./ops/metricas.sh>
+## received_bytes por tópico (pico por minuto, última 1 h)
+__debezium-heartbeat-lcc-xq0oxx1.desafio: pico 92.0 bytes/min
+desafio.fraud.detected: pico 1981.0 bytes/min
+desafio.payments.enriched: pico 177868.0 bytes/min
+desafio.payments.quarantine: pico 571.0 bytes/min
+desafio.payments.transactions: pico 120580.0 bytes/min
+desafio.public.accounts: pico 38994.0 bytes/min
+desafio.public.cards: pico 48593.0 bytes/min
+desafio.public.customers: pico 39787.0 bytes/min
+desafio.public.merchants: pico 10958.0 bytes/min
+desafio.public.transactions: pico 338477.0 bytes/min
+
+## consumer lag por grupo (offsets, última 1 h)
 ```
+
+O bloco de lag vem vazio porque não há consumer group permanente: os consumidores de evidência leem até o fim e se desligam, e o Flink controla os próprios offsets sem consumer group.
 
 ### 2. Segurança
 
@@ -212,7 +336,46 @@ Escolhas importantes:
 | `cdc_user` (Postgres) | Replicar e ler 5 tabelas | Escrever no banco | Privilégio mínimo na origem |
 
 ```text
-<sua evidência aqui: saída de ./ops/acessos.sh>
+## Service accounts
+  Current |     ID     |       Name       |          Description            
+          | sa-0jm2wyp | desafio-consumer | Desafio pipeline de             
+          | sa-8mopkd0 | desafio-flink    | Desafio pipeline de             
+          | sa-kgz10wp | desafio-observer | Desafio pipeline de             
+          | sa-pk3p06o | desafio-producer | Desafio pipeline de             
+
+## ACLs do cluster
+     Principal    | Permission |    Operation     | Resource Type |    Resource Name     | Pattern Type  
+------------------+------------+------------------+---------------+----------------------+---------------
+  User:sa-0jm2wyp | ALLOW      | DESCRIBE         | TOPIC         | desafio              | PREFIXED      
+  User:sa-0jm2wyp | ALLOW      | READ             | GROUP         | desafio              | PREFIXED      
+  User:sa-0jm2wyp | ALLOW      | READ             | TOPIC         | desafio              | PREFIXED      
+  User:sa-pk3p06o | ALLOW      | CREATE           | TOPIC         | __debezium-heartbeat | PREFIXED      
+  User:sa-pk3p06o | ALLOW      | CREATE           | TOPIC         | desafio              | PREFIXED      
+  User:sa-pk3p06o | ALLOW      | DESCRIBE         | CLUSTER       | kafka-cluster        | LITERAL       
+  User:sa-pk3p06o | ALLOW      | DESCRIBE         | TOPIC         | __debezium-heartbeat | PREFIXED      
+  User:sa-pk3p06o | ALLOW      | DESCRIBE         | TOPIC         | desafio              | PREFIXED      
+  User:sa-pk3p06o | ALLOW      | DESCRIBE_CONFIGS | TOPIC         | desafio              | PREFIXED      
+  User:sa-pk3p06o | ALLOW      | IDEMPOTENT_WRITE | CLUSTER       | kafka-cluster        | LITERAL       
+  User:sa-pk3p06o | ALLOW      | WRITE            | TOPIC         | __debezium-heartbeat | PREFIXED      
+  User:sa-pk3p06o | ALLOW      | WRITE            | TOPIC         | desafio              | PREFIXED      
+
+## Role bindings de sa-8mopkd0
+     ID     |    Principal    | Email |       Role       | Environment | Cloud Cluster |  Cluster Type   | Logical Cluster | Resource Type |  Name   | Pattern Type  
+------------+-----------------+-------+------------------+-------------+---------------+-----------------+-----------------+---------------+---------+---------------
+  rb-g4eGBY | User:sa-8mopkd0 |       | EnvironmentAdmin | env-776ok1  |               |                 |                 |               |         |               
+  rb-mQeZN2 | User:sa-8mopkd0 |       | DeveloperWrite   | env-776ok1  |               | Schema Registry | lsrc-81656nr    | Subject       | desafio | PREFIXED      
+  rb-o7eZKv | User:sa-8mopkd0 |       | DeveloperRead    | env-776ok1  |               | Schema Registry | lsrc-81656nr    | Subject       | desafio | PREFIXED      
+  rb-wozvRw | User:sa-8mopkd0 |       | DeveloperManage  | env-776ok1  |               | Schema Registry | lsrc-81656nr    | Subject       | desafio | PREFIXED      
+
+## Role bindings de sa-0jm2wyp
+     ID     |    Principal    | Email |     Role      | Environment | Cloud Cluster |  Cluster Type   | Logical Cluster | Resource Type |  Name   | Pattern Type  
+------------+-----------------+-------+---------------+-------------+---------------+-----------------+-----------------+---------------+---------+---------------
+  rb-qyeZdA | User:sa-0jm2wyp |       | DeveloperRead | env-776ok1  |               | Schema Registry | lsrc-81656nr    | Subject       | desafio | PREFIXED      
+
+## Role bindings de sa-kgz10wp
+     ID     |    Principal    | Email |     Role      | Environment | Cloud Cluster | Cluster Type | Logical Cluster | Resource Type | Name | Pattern Type  
+------------+-----------------+-------+---------------+-------------+---------------+--------------+-----------------+---------------+------+---------------
+  rb-N3Nlrd | User:sa-kgz10wp |       | MetricsViewer | env-776ok1  |               |              |                 |               |      |
 ```
 
 ### 3. Custos
@@ -247,9 +410,7 @@ Sobre a quarentena: o conector de CDC gerenciado é uma fonte, e a DLQ do Kafka 
 
 Sobre a IA: ela pontua só os **alertas**, e não cada transação. Chamar o modelo para todas as linhas multiplicaria o custo e a latência sem necessidade.
 
-```text
-<sua evidência aqui, se ligar alguma opcional: alertas com risk_assessment ou a tabela Iceberg>
-```
+Tableflow e IA ficaram **desligados** neste teste, para manter o custo mínimo. Os scripts estão prontos em `setup.sh opcionais` e `sql/opcional/`.
 
 ## Custo total
 
@@ -269,7 +430,18 @@ Sobre a IA: ela pontua só os **alertas**, e não cada transação. Chamar o mod
 O script apaga os statements, o compute pool, o conector, o environment, as API keys e as service accounts e, por fim, **remove o slot de replicação no Postgres**: um slot sem consumidor segura o WAL e pode encher o disco do banco.
 
 ```text
-<sua evidência aqui: evidencias/teardown.txt mostrando "None found." para conectores e statements>
+## confluent connect cluster list
+None found.
+
+## confluent flink statement list
+(só sobrou uma consulta interna do próprio console, "i-s-6735f6f1...",
+ COMPLETED, criada ao abrir o tópico de alertas no navegador; os 12
+ statements "desafio-*" foram apagados e o environment foi removido em seguida)
+
+Deleted environment "env-776ok1".
+Deleted IAM service account "sa-pk3p06o" / "sa-0jm2wyp" / "sa-8mopkd0" / "sa-kgz10wp".
+pg_drop_replication_slot (1 row)   -> slot desafio_slot removido no Postgres
+DROP PUBLICATION
 ```
 
 ## Por que cada peça
@@ -283,6 +455,20 @@ O script apaga os statements, o compute pool, o conector, o environment, as API 
 | Enriquecimento | **Temporal join** | Join comum: usaria a versão atual da conta, e não a vigente na hora da compra |
 | Regra | **`MATCH_RECOGNIZE`** com `WITHIN` | Janela fixa de 60 s: perde rajadas que cruzam a borda da janela |
 | Banco | **Neon** | Postgres local: o conector gerenciado precisa de um endereço público |
+
+## Lições do primeiro teste
+
+O pipeline foi subido de verdade, numa conta nova, e cada parada virou uma correção no repositório. Elas ficam registradas porque explicam escolhas que parecem arbitrárias no código.
+
+| O que aconteceu | Causa | O que mudou |
+|---|---|---|
+| `No credit card on file` ao criar o cluster | O Confluent exige cartão cadastrado mesmo com créditos de avaliação | Pré-requisito no README; o setup agora para com mensagem clara quando um `create` falha |
+| `Basic Clusters can not use resource roles` | O cluster Basic não aceita RBAC por tópico, e o Flink não usa ACLs | A identidade do Flink recebe `EnvironmentAdmin`, restrito ao environment do desafio |
+| `embedded tags that do not exist: [PII, PCI]` | Tags usadas no schema precisam existir no Stream Catalog | O setup cria as tags pela API do catálogo antes de registrar o schema |
+| `Key columns must appear at the beginning` | `DISTRIBUTED BY HASH(card_id)` transforma a coluna em chave, que precisa ser a primeira | Tabelas com `DISTRIBUTED INTO 1 BUCKETS`, sem chave de distribuição |
+| 3 de 13 alertas do seed sumiram | O temporal join emite fora da ordem do tempo e o `MATCH_RECOGNIZE` descarta eventos atrasados | As regras leem as transações limpas, que chegam na ordem do CDC |
+| Envelopes da Padaria não apareceram | Em 40 s o consumidor só leu 11 mensagens (entrada no grupo e busca de schema) | Tempo de leitura das evidências aumentado para 120 s |
+| `expired token` na CLI | Login via GitHub (SSO) não fica salvo pelo `--save` | Refazer `confluent login --save --no-browser` a cada sessão |
 
 ## Problemas comuns
 
