@@ -380,9 +380,9 @@ O bloco de lag vem vazio porque não há consumer group permanente: os consumido
 
 ### 3. Custos
 
-```text
-<sua evidência aqui: saída de ./ops/custo.sh AAAA-MM-DD AAAA-MM-DD>
-```
+![Billing logo após o teardown: US$ 0,00 cobrados, créditos de avaliação intactos](evidencias/print-billing.png)
+
+Logo depois do teardown, a fatura ainda mostrava **US$ 0,00** (a própria página avisa que o uso aparece com atraso), e todo o consumo é coberto pelo crédito de avaliação `FREETRIAL400`. A estimativa do período está na tabela [Custo total](#custo-total).
 
 Duas alavancas de redução:
 1. **Desligar o que não está em uso:** o conector CDC V2 é cobrado por hora de tarefa, mesmo parado sem eventos, e os statements do Flink consomem CFU enquanto rodam. O `teardown.sh` existe para isso.
@@ -416,10 +416,12 @@ Tableflow e IA ficaram **desligados** neste teste, para manter o custo mínimo. 
 
 | Recurso | Tempo ligado | Custo |
 |---|---|---|
-| Cluster Basic | `<horas>` | `<US$>` |
-| Conector PostgresCdcSourceV2 | `<horas>` | `<US$>` |
-| Flink (CFU) | `<horas>` | `<US$>` |
-| **Total** | | **US$ X,XX** |
+| Cluster Basic + Schema Registry Essentials | ~13 h (de manhã até o teardown) | ~US$ 0,00 (1º eCKU grátis; pacote Essentials grátis; centavos de tráfego e armazenamento) |
+| Conector PostgresCdcSourceV2 | ~1h15 (21h14 às 22h30) | ~US$ 0,65 (US$ 0,50 por tarefa-hora) |
+| Flink | ~1h05, média de 4 CFUs | ~US$ 1,00 |
+| **Total estimado** | | **~US$ 1,65, coberto pelos créditos de avaliação: US$ 0,00 pagos** |
+
+Valores estimados a partir dos preços públicos e dos horários do teste (24/11/2026). A fatura oficial consolida com algumas horas de atraso; para conferir depois, use `./ops/custo.sh 2026-11-24 2026-11-26` ou a tela **Billing & payment**.
 
 ## Como derrubar tudo
 
